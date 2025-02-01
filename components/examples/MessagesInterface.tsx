@@ -452,46 +452,8 @@ const MessagesInterface: React.FC<MessagesInterfaceProps> = ({
       <Divider type="DOUBLE" />
       <SidebarLayout
         defaultSidebarWidth={12}
-        isShowingHandle={true}
-        sidebar={
-          <>
-            <Avatar src="/C714D780-B4A0-46A5-BC62-0187C130284D_1_105_c.jpeg">
-              <Indent>
-                Oai
-                <br />
-                <ChatPreviewInline>The smallest seed of an idea can grow to define or destroy you</ChatPreviewInline>
-              </Indent>
-            </Avatar>
-            <Avatar src="/pravalogo.png">
-              <Indent>
-                Eas
-                <br />
-                <ChatPreviewInline>You're waiting for a train...</ChatPreviewInline>
-              </Indent>
-            </Avatar>
-            <Avatar src="https://plugins.sdan.io/_next/image?url=%2Fimages%2Fpdf-logo.png&w=256&q=75">
-              <Indent>
-                Bean
-                <br />
-                <ChatPreviewInline>Paradox could collapse the dream</ChatPreviewInline>
-              </Indent>
-            </Avatar>
-            <Avatar src="/channels4_profile.jpg">
-              <Indent>
-                Cook
-                <br />
-                <ChatPreviewInline>I will not follow in my father's footsteps</ChatPreviewInline>
-              </Indent>
-            </Avatar>
-            <Avatar src="https://sdan.io/surya_low.jpeg">
-              <Indent>
-                Ed
-                <br />
-                <ChatPreviewInline>Those aren't my memories</ChatPreviewInline>
-              </Indent>
-            </Avatar>
-          </>
-        }
+        isShowingHandle={false} // Removed the handle
+        sidebar={null} // Removed the avatars and chat preview messages
       >
         {messages.map((msg, i) => (
           msg.role === 'user' ? (
@@ -500,17 +462,17 @@ const MessagesInterface: React.FC<MessagesInterfaceProps> = ({
             <MessageViewer key={i}>{msg.content}</MessageViewer>
           )
         ))}
-        
+
         <form onSubmit={handleSubmit}>
-          <Input 
+          <Input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             disabled={isRunning}
             isBlink={!isRunning}
           />
         </form>
-        <ActionButton 
-          onClick={onInterrupt} 
+        <ActionButton
+          onClick={onInterrupt}
           disabled={!isRunning}
           style={{ marginLeft: '1ch' }}
         >
