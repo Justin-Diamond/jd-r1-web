@@ -4,7 +4,6 @@ import '@root/global.scss';
 import * as Constants from '@common/constants';
 import * as Utilities from '@common/utilities';
 
-// NOTE(jimmylee): This is a kitchen sink of all components.
 // When forking or remixing, you'll likely only need a few.
 import Accordion from '@components/Accordion';
 import ActionBar from '@components/ActionBar';
@@ -62,8 +61,6 @@ import NumberRangeSlider from '@components/NumberRangeSlider';
 import Package from '@root/package.json';
 import RadioButtonGroup from '@components/RadioButtonGroup';
 import Row from '@components/Row';
-import RowSpaceBetween from '@components/RowSpaceBetween';
-import Script from 'next/script';
 import Select from '@components/Select';
 import SidebarLayout from '@components/SidebarLayout';
 import Table from '@components/Table';
@@ -100,7 +97,6 @@ declare global {
 // NOTE(jimmylee)
 // https://nextjs.org/docs/app/api-reference/functions/generate-metadata
 
-
 interface MessageType {
   role: 'user' | 'assistant'
   content: string
@@ -109,79 +105,77 @@ interface MessageType {
 // NOTE(jimmylee)
 // https://nextjs.org/docs/pages/building-your-application/routing/pages-and-layouts
 export default function ChatPage() {
-  const worker = useRef<Worker | null>(null)
-  const [messages, setMessages] = useState<MessageType[]>([])
-  const [isRunning, setIsRunning] = useState(false)
-  const [tpsValue, setTpsValue] = useState<number | null>(null)
-  const [webGPUSupported, setWebGPUSupported] = useState<boolean>(true)
-  const stoppingCriteria = useRef(new InterruptableStoppingCriteria())
+  const worker = useRef<Worker | null>(null);
+  const [messages, setMessages] = useState<MessageType[]>([]);
+  const [isRunning, setIsRunning] = useState(false);
+  const [tpsValue, setTpsValue] = useState<number | null>(null);
+  const [webGLSupported, setWebGLSupported] = useState<boolean>(true);
+  const stoppingCriteria = useRef(new InterruptableStoppingCriteria());
 
   useEffect(() => {
-    // Check WebGPU support
-    const checkWebGPU = async () => {
+    // Check WebGL support
+    const checkWebGL = async () => {
       try {
-        if (!navigator.gpu) {
-          throw new Error("WebGPU is not supported in this browser")
-        }
-        const adapter = await navigator.gpu.requestAdapter()
-        if (!adapter) {
-          throw new Error("No suitable GPU adapter found")
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) {
+          throw new Error("WebGL is not supported in this browser");
         }
       } catch (e) {
-        console.error('WebGPU not supported:', e)
-        setWebGPUSupported(false)
+        console.error('WebGL not supported:', e);
+        setWebGLSupported(false);
       }
-    }
-    
-    checkWebGPU()
-    
+    };
+
+    checkWebGL();
+
     worker.current = new Worker(new URL('../public/worker.js', import.meta.url), {
       type: 'module'
-    })
+    });
 
     const onMessage = (e: MessageEvent) => {
       switch (e.data.status) {
         case 'start':
-          setMessages(prev => [...prev, { role: 'assistant', content: '' }])
-          break
+          setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+          break;
         case 'update':
           // Update TPS
           if (typeof e.data.tps === 'number') {
-            setTpsValue(e.data.tps)
+            setTpsValue(e.data.tps);
           }
           // Build the assistant's streaming message
           setMessages(prev => {
-            const last = prev.at(-1)
-            if (!last) return prev
+            const last = prev.at(-1);
+            if (!last) return prev;
             return [
-              ...prev.slice(0, -1), 
+              ...prev.slice(0, -1),
               { ...last, content: last.content + e.data.output }
-            ]
-          })
-          break
+            ];
+          });
+          break;
         case 'complete':
-          setIsRunning(false)
-          break
+          setIsRunning(false);
+          break;
       }
-    }
+    };
 
-    worker.current.addEventListener('message', onMessage)
-    return () => worker.current?.removeEventListener('message', onMessage)
-  }, [])
+    worker.current.addEventListener('message', onMessage);
+    return () => worker.current?.removeEventListener('message', onMessage);
+  }, []);
 
   const handleSend = (newMessage: string) => {
-    setMessages(prev => [...prev, { role: 'user', content: newMessage }])
-    setIsRunning(true)
+    setMessages(prev => [...prev, { role: 'user', content: newMessage }]);
+    setIsRunning(true);
     worker.current?.postMessage({
       type: 'generate',
       data: [...messages, { role: 'user', content: newMessage }]
-    })
-  }
+    });
+  };
 
   const handleInterrupt = () => {
-    stoppingCriteria.current.interrupt()
-    worker.current?.postMessage({ type: 'interrupt' })
-  }
+    stoppingCriteria.current.interrupt();
+    worker.current?.postMessage({ type: 'interrupt' });
+  };
 
   return (
     <DefaultLayout previewPixelSRC="https://intdev-global.s3.us-west-2.amazonaws.com/template-app-icon.png">
@@ -189,16 +183,12 @@ export default function ChatPage() {
       <DebugGrid />
       <DefaultActionBar />
       <Grid>
-        {!webGPUSupported ? (
+        {!webGLSupported ? (
           <AlertBanner>
-            ⚠️ WebGPU is not supported in your browser. Please use Chrome Canary or Chrome 119+ to run this application.
+            ⚠️ WebGL is not supported in your browser. Please use a modern browser to run this application.
           </AlertBanner>
         ) : (
           <Accordion defaultValue={true} title="DEEPSEEK R-1 RUNNING LOCALLY IN YOUR BROWSER">
-            {/* <br />
-            <Card title="GPU UTILIZATION">
-              <GPUMonitor />
-            </Card> */}
             <br />
             <Card title="TPS (Tokens/Second)">
               <TPSCycleTable tpsValue={tpsValue || 0} />
